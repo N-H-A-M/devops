@@ -1,0 +1,10 @@
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8000
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8000
+  periodSeconds: 5
