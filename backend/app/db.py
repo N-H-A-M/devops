@@ -7,12 +7,14 @@ import asyncio, asyncpg, json , logging, os
 from dotenv import load_dotenv
 from typing import List, Optional
 from src.card_src.models import CreditCard
-
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 logger = logging.getLogger("card_comparison")
-
 _pool: Optional[asyncpg.Pool] = None
 
 load_dotenv()
+
+
 
 def _get_database_url() -> str:
     """
@@ -30,6 +32,15 @@ def _get_database_url() -> str:
         )
     return url
 
+
+# 1. Get the URL and create the engine
+engine = create_engine(_get_database_url())
+
+# 2. Create the session maker (globally importable)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 3. Create the Base (globally importable)
+Base = declarative_base()
 
 async def _register_jsonb_codec(conn: asyncpg.Connection) -> None:
     """Makes JSONB columns come back as native dicts instead of raw strings."""
