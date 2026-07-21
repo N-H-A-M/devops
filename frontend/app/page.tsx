@@ -15,7 +15,7 @@ import {
   Loader2 
 } from 'lucide-react';
 
-const MAX_COMPARE = 3; // matches the backend's /cards/compare limit
+const MAX_COMPARE = 3;
 type ActivePage = 'home' | 'directory' | 'compare';
 
 export default function Home() {
@@ -25,6 +25,29 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<ActivePage>('home');
 
+  // --- 1. HASH ROUTING SYNC ---
+  // Syncs the active page with the URL hash (#home, #directory, #compare)
+  // so browser back/forward buttons work naturally.
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') as ActivePage;
+      if (['home', 'directory', 'compare'].includes(hash)) {
+        setCurrentPage(hash);
+      }
+    };
+
+    handleHashChange(); // Sync initial state on load
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // --- 2. HELPER TO NAVIGATE AND UPDATE URL HASH ---
+  const navigateTo = (page: ActivePage) => {
+    setCurrentPage(page);
+    window.location.hash = page;
+  };
+
+  // --- 3. FETCH CARDS API ---
   useEffect(() => {
     let cancelled = false;
 
@@ -65,13 +88,14 @@ export default function Home() {
           
           {/* Logo */}
           <button 
-            onClick={() => setCurrentPage('home')}
-            className="flex items-center gap-3 group focus:outline-none"
+            type="button"
+            onClick={() => navigateTo('home')}
+            className="flex items-center gap-3 group focus:outline-none cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-lg border border-neutral-800 flex items-center justify-center group-hover:border-neutral-400 transition-colors">
+            <div className="w-9 h-9 rounded-lg border border-neutral-800 flex items-center justify-center group-hover:border-neutral-400 transition-colors pointer-events-none">
               <CreditCard className="w-4 h-4 text-neutral-400 group-hover:text-neutral-100 transition-colors" />
             </div>
-            <span className="font-medium tracking-widest uppercase text-sm text-neutral-200 group-hover:text-white transition-colors">
+            <span className="font-medium tracking-widest uppercase text-sm text-neutral-200 group-hover:text-white transition-colors pointer-events-none">
               S I L V E R L I N E
             </span>
           </button>
@@ -79,8 +103,9 @@ export default function Home() {
           {/* Navigation Items */}
           <nav className="flex items-center gap-2 sm:gap-4">
             <button
-              onClick={() => setCurrentPage('home')}
-              className={`px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
+              type="button"
+              onClick={() => navigateTo('home')}
+              className={`cursor-pointer px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
                 currentPage === 'home' 
                   ? 'border-neutral-400 bg-neutral-900 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]' 
                   : 'border-transparent text-neutral-400 hover:text-neutral-200'
@@ -89,8 +114,9 @@ export default function Home() {
               Home
             </button>
             <button
-              onClick={() => setCurrentPage('directory')}
-              className={`px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
+              type="button"
+              onClick={() => navigateTo('directory')}
+              className={`cursor-pointer px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
                 currentPage === 'directory' 
                   ? 'border-neutral-400 bg-neutral-900 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]' 
                   : 'border-transparent text-neutral-400 hover:text-neutral-200'
@@ -99,8 +125,9 @@ export default function Home() {
               Directory
             </button>
             <button
-              onClick={() => setCurrentPage('compare')}
-              className={`relative px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
+              type="button"
+              onClick={() => navigateTo('compare')}
+              className={`cursor-pointer relative px-4 py-2 rounded-md text-xs font-medium uppercase tracking-wider transition-all duration-300 border ${
                 currentPage === 'compare' 
                   ? 'border-neutral-400 bg-neutral-900 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]' 
                   : 'border-transparent text-neutral-400 hover:text-neutral-200'
@@ -108,7 +135,7 @@ export default function Home() {
             >
               Compare
               {selectedCards.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-100 text-neutral-950 font-bold rounded-full flex items-center justify-center text-[9px]">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-neutral-100 text-neutral-950 font-bold rounded-full flex items-center justify-center text-[9px] pointer-events-none">
                   {selectedCards.length}
                 </span>
               )}
@@ -136,14 +163,16 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <button
-                  onClick={() => setCurrentPage('directory')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-lg bg-white text-neutral-950 font-medium text-sm transition-all duration-300 border border-transparent hover:bg-neutral-200 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={() => navigateTo('directory')}
+                  className="cursor-pointer w-full sm:w-auto px-8 py-4 rounded-lg bg-white text-neutral-950 font-medium text-sm transition-all duration-300 border border-transparent hover:bg-neutral-200 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
                 >
                   Browse Cards <ChevronRight className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setCurrentPage('compare')}
-                  className="w-full sm:w-auto px-8 py-4 rounded-lg bg-transparent text-neutral-200 font-medium text-sm border border-neutral-800 transition-all duration-300 hover:border-neutral-400 hover:text-white flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={() => navigateTo('compare')}
+                  className="cursor-pointer w-full sm:w-auto px-8 py-4 rounded-lg bg-transparent text-neutral-200 font-medium text-sm border border-neutral-800 transition-all duration-300 hover:border-neutral-400 hover:text-white flex items-center justify-center gap-2"
                 >
                   Go to Compare Tool <ArrowRightLeft className="w-4 h-4" />
                 </button>
@@ -233,8 +262,9 @@ export default function Home() {
                         </ul>
                       </div>
                       <button
+                        type="button"
                         onClick={() => toggleCompare(card)}
-                        className={`w-full py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-300 border ${
+                        className={`cursor-pointer w-full py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-300 border ${
                           isComparing
                             ? 'border-neutral-200 bg-neutral-100 text-neutral-950 hover:bg-white'
                             : 'border-neutral-850 bg-neutral-900 text-neutral-300 hover:border-neutral-400 hover:text-white'
@@ -260,8 +290,9 @@ export default function Home() {
               </div>
               {selectedCards.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => setSelectedCards([])}
-                  className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400 hover:text-white transition-colors"
+                  className="cursor-pointer flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-neutral-400 hover:text-white transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Reset Selection
                 </button>
@@ -278,8 +309,9 @@ export default function Home() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setCurrentPage('directory')}
-                  className="px-6 py-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-400 text-neutral-200 font-semibold text-xs tracking-wider uppercase transition-all duration-300"
+                  type="button"
+                  onClick={() => navigateTo('directory')}
+                  className="cursor-pointer px-6 py-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-400 text-neutral-200 font-semibold text-xs tracking-wider uppercase transition-all duration-300"
                 >
                   Browse Directory
                 </button>
@@ -297,8 +329,9 @@ export default function Home() {
                   >
                     {/* Interactive Remove trigger */}
                     <button
+                      type="button"
                       onClick={() => toggleCompare(card)}
-                      className="absolute top-5 right-5 text-[10px] font-mono text-neutral-500 hover:text-white transition-colors"
+                      className="cursor-pointer absolute top-5 right-5 text-[10px] font-mono text-neutral-500 hover:text-white transition-colors"
                     >
                       [ Remove ]
                     </button>
