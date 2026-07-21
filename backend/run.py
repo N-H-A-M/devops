@@ -10,7 +10,9 @@ BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BACKEND_DIR, ".."))
 
 # Make sure backend modules (app, etc.) are importable
-sys.path.insert(0, BACKEND_DIR)
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
 
 
 def run_other_script(script_relative_path: str):
@@ -62,15 +64,42 @@ def run_migrations():
         print(f"Migration failed: {e}")
         sys.exit(1)
 
+def start_frontend():
+    """Spawns the pnpm frontend dev server from the project root."""
+    frontend_dir = os.path.join(PROJECT_ROOT, "frontend")
+    
+    if not os.path.exists(frontend_dir):
+        print("⚠️  Frontend directory not found, skipping frontend server.")
+        return None
+
+    print("🚀 Starting Next.js frontend server via pnpm...")
+    # Spawn pnpm run dev inside the frontend directory
+    process = subprocess.Popen(
+        ["pnpm", "--prefix", "frontend", "run", "dev"],
+        cwd=PROJECT_ROOT
+    )
+    return process
 
 if __name__ == "__main__":
-    # 1. Run bash setup scripts via new 'deploy/scripts/' directory
+    frontend_process = None
     run_other_script("deploy/scripts/setup_db.sh")
     run_other_script("deploy/scripts/startup.sh")
-    
-    # 2. Run migrations dynamically
     run_migrations()
     
-    # 3. Launch FastAPI server targeting app.main:app inside backend/
-    print("--- Starting FastAPI Server ---")
-    uvicorn.run("app.card_comparison:app", host="0.0.0.0", port=8000, reload=True)
+    try: 
+        frontend_process = start_frontend()
+        print("--- Starting FastAPI Server ---")
+        uvicorn.run("app.card_comparison:app", host="0.0.0.0", port=8000, reload=True)
+
+    except KeyboardInterrupt:
+        print("\n stopping server")
+    finally:
+        if frontend_process and frontend_process.poll() is None:
+            print("Stopping frontend server...")
+            frontend_process.terminate()
+            frontend_process.wait()
+        print("Shutdown complete.")
+
+    
+    
+    
