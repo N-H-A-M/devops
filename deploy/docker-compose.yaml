@@ -1,19 +1,15 @@
-
 services:
   postgres_db:
     image: postgres:15-alpine
-    container_name: cards_postgres_local
+    container_name: cards_postgres_localv2
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-cards_db}
     ports:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Automatically runs schema and seeds if the database container is fresh
-    # Postgres containers automatically execute any .sql scripts placed in this directory
-      - ./src/postgres_sql:/docker-entrypoint-initdb.d
 
 volumes:
   postgres_data:

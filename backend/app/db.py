@@ -6,7 +6,7 @@ write SQL directly -- they call these functions and get CreditCard objects back.
 import asyncio, asyncpg, json , logging, os
 from dotenv import load_dotenv
 from typing import List, Optional
-from src.card_src.models import CreditCard
+from app.models import CreditCard
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 logger = logging.getLogger("card_comparison")
