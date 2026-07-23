@@ -35,47 +35,47 @@ jobs:
         run: echo "SHA_TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       # ==========================================
+      # LOWERCASE LETTERS
+      # ==========================================
+      - name: Set Environment Variables
+        run: |
+          # Convert 'N-H-A-M/devops' to lowercase 'n-h-a-m/devops'
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_BASE=ghcr.io/${REPO_LOWER}" >> $GITHUB_ENV
+          echo "SHA_TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          
+      # ==========================================
       # BACKEND PIPELINE
       # ==========================================
 
-      # Step A: BUILD
       - name: Build Backend Image
         run: |
           docker build -t card-backend:local ./backend
 
-      # Step B: TAG
       - name: Tag Backend Image
         run: |
-          IMAGE_URI=ghcr.io/${{ github.repository }}/backend
-          docker tag card-backend:local ${IMAGE_URI}:${{ steps.vars.outputs.SHA_TAG }}
-          docker tag card-backend:local ${IMAGE_URI}:latest
+          docker tag card-backend:local $IMAGE_BASE/backend:${{ env.SHA_TAG }}
+          docker tag card-backend:local $IMAGE_BASE/backend:latest
 
-      # Step C: PUSH
       - name: Push Backend Image
         run: |
-          IMAGE_URI=ghcr.io/${{ github.repository }}/backend
-          docker push ${IMAGE_URI}:${{ steps.vars.outputs.SHA_TAG }}
-          docker push ${IMAGE_URI}:latest
+          docker push $IMAGE_BASE/backend:${{ env.SHA_TAG }}
+          docker push $IMAGE_BASE/backend:latest
 
       # ==========================================
       # FRONTEND PIPELINE
       # ==========================================
 
-      # Step A: BUILD
       - name: Build Frontend Image
         run: |
           docker build -t card-frontend:local ./frontend
 
-      # Step B: TAG
       - name: Tag Frontend Image
         run: |
-          IMAGE_URI=ghcr.io/${{ github.repository }}/frontend
-          docker tag card-frontend:local ${IMAGE_URI}:${{ steps.vars.outputs.SHA_TAG }}
-          docker tag card-frontend:local ${IMAGE_URI}:latest
+          docker tag card-frontend:local $IMAGE_BASE/frontend:${{ env.SHA_TAG }}
+          docker tag card-frontend:local $IMAGE_BASE/frontend:latest
 
-      # Step C: PUSH
       - name: Push Frontend Image
         run: |
-          IMAGE_URI=ghcr.io/${{ github.repository }}/frontend
-          docker push ${IMAGE_URI}:${{ steps.vars.outputs.SHA_TAG }}
-          docker push ${IMAGE_URI}:latest
+          docker push $IMAGE_BASE/frontend:${{ env.SHA_TAG }}
+          docker push $IMAGE_BASE/frontend:latest
