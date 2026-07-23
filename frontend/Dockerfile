@@ -4,9 +4,12 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy package files first for optimal layer caching
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files (including pnpm lockfile)
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
 
 # ==========================================
 # STAGE 2: Build Application
@@ -14,16 +17,17 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js / React app
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN npm run build
+RUN pnpm run build
 
 # ==========================================
-# STAGE 3: Production Runtime (Clean & Lean)
+# STAGE 3: Production Runtime
 # ==========================================
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -31,11 +35,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy standalone build or static assets from builder stage
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
