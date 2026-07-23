@@ -1,0 +1,40 @@
+# ==========================================
+# Secrets & Environments (ALL SERVICES)
+# ==========================================
+**/.env
+**/.env.*
+!**/.env.example
+
+# ==========================================
+# Version Control & IDE Overhead
+# ==========================================
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+
+# ==========================================
+# Backend / Python Ignores
+# ==========================================
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/app/test_*.py
+**/app/show_cards.py
+
+# ==========================================
+# Frontend / Node Ignores
+# ==========================================
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+npm-debug.log*
+
+# ==========================================
+# Docker & Deployment Files
+# ==========================================
+**/Dockerfile
+docker-compose*.yml
+.dockerignore
