@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: app-deployment
+ labels:
+   app: card-db
+spec:
+ replicas: 3
+ selector:
+   matchLabels:
+     app: card-db
+ template:
+   metadata:
+     labels:
+       app: card-db
+   spec:
+     containers:
+     - name: credit-card
+       image: nginx:1.14.2
+       ports:
+       - containerPort: 80
+ strategy:
+   type: RollingUpdate
+   rollingUpdate:
+     maxSurge: 1
+     maxUnavailable: 1 

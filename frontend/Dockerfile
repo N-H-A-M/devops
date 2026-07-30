@@ -1,52 +1,41 @@
 # ==========================================
-# STAGE 1: Install Dependencies
-# ==========================================
-FROM node:22-alpine AS deps
-WORKDIR /app
-
-ENV CI=true
-# Enable pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy package files (including pnpm lockfile)
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-RUN pnpm install --frozen-lockfile
-
-# ==========================================
-# STAGE 2: Build Application
+# STAGE 1: Build Static Assets
 # ==========================================
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+ENV CI=true
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy dependencies and source code
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+RUN pnpm install --frozen-lockfile
+
 COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-RUN pnpm run build
+# Builds static HTML/CSS/JS into /app/out
+RUN pnpm run build 
 
 # ==========================================
-# STAGE 3: Production Runtime
+# STAGE 2: Secure Nginx Alpine Runtime
 # ==========================================
-FROM node:22-alpine AS runner
-WORKDIR /app
+FROM nginx:alpine AS runner
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy ONLY compiled static files from builder (node_modules discarded!)
+COPY --from=builder /app/out /usr/share/nginx/html
 
-USER nextjs
+# Grant non-root user ownership of Nginx paths
+RUN chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /var/log/nginx /tmp
 
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+USER appuser
 
-CMD ["node", "server.js"]
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]

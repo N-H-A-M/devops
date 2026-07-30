@@ -45,12 +45,21 @@ jobs:
           echo "SHA_TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
           
       # ==========================================
-      # BACKEND PIPELINE
+      # BACKEND PIPELINE BUILD -> SCAN -> TAG & PUSH
       # ==========================================
 
       - name: Build Backend Image
         run: |
           docker build -t card-backend:local ./backend
+
+      - name: Scan Backend Image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'card-backend:local'
+          format: 'table'
+          exit-code: '1' # Fails the CI job if HIGH or CRITICAL issues are found
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
 
       - name: Tag Backend Image
         run: |
@@ -63,13 +72,22 @@ jobs:
           docker push $IMAGE_BASE/backend:latest
 
       # ==========================================
-      # FRONTEND PIPELINE
+      # FRONTEND PIPELINE BUILD -> SCAN -> TAG & PUSH
       # ==========================================
 
       - name: Build Frontend Image
         run: |
           docker build -t card-frontend:local ./frontend
 
+      - name: Scan Frontend Image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'card-frontend:local'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+          
       - name: Tag Frontend Image
         run: |
           docker tag card-frontend:local $IMAGE_BASE/frontend:${{ env.SHA_TAG }}
