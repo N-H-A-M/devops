@@ -1,26 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: app-deployment
- labels:
-   app: card-db
+  name: app-deployment
+  namespace: application
+  labels:
+    app: frontend
 spec:
- replicas: 3
- selector:
-   matchLabels:
-     app: card-db
- template:
-   metadata:
-     labels:
-       app: card-db
-   spec:
-     containers:
-     - name: credit-card
-       image: nginx:1.14.2
-       ports:
-       - containerPort: 80
- strategy:
-   type: RollingUpdate
-   rollingUpdate:
-     maxSurge: 1
-     maxUnavailable: 1 
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+       maxSurge: 1
+       maxUnavailable: 1 
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secrets
+      containers:
+        - name: credit-card
+          image: ghcr.io/N-H-A-M/devops:backend
+          ports:
+            - containerPort: 8000
+  
