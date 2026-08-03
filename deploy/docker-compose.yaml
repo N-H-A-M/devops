@@ -2,6 +2,8 @@ services:
   postgres_db:
     image: postgres:15-alpine
     container_name: cards_postgres_localv2
+    env_file:
+      - ../.env
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -10,6 +12,27 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+
+  backend:
+    build: ../backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      # MUST use 5432 here because backend is INSIDE the Docker network!
+      - DATABASE_URL=${DATABASE_URL:-error}
+    depends_on:
+       postgres_db:
+        condition: service_healthy
+        
 
 volumes:
   postgres_data:
