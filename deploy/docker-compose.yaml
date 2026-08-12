@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     container_name: cards_postgres_localv2
     env_file:
-      - ../.env
+      - ${PROJECT_ROOT}/.env
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -12,8 +12,10 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ${PROJECT_ROOT}/backend/migrations/versions/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ${PROJECT_ROOT}/backend/migrations/versions/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-dsa} -d $${POSTGRES_DB:-cards_db}"]      
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,18 +23,24 @@ services:
 
 
   backend:
-    build: ../backend
+    build: ${PROJECT_ROOT}/backend
     ports:
       - "8000:8000"
     env_file:
-      - ../.env
+      - ${PROJECT_ROOT}/.env
     environment:
-      # MUST use 5432 here because backend is INSIDE the Docker network!
       - DATABASE_URL=${DATABASE_URL:-error}
     depends_on:
        postgres_db:
         condition: service_healthy
         
-
+  frontend:
+    build: ${PROJECT_ROOT}/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
 volumes:
   postgres_data:

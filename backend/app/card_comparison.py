@@ -11,11 +11,11 @@ from fastapi import FastAPI, HTTPException, Response, Query, Request, Path
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app import db
-from .models import CreditCard
+from app.models import CreditCard
 
 # Loads DATABASE_URL from local .env file if present
 load_dotenv()
-raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost,http://127.0.0.1:8080")
 # ---------------------------------------------------------
 # 0. STRUCTURED JSON LOGGING
 # ---------------------------------------------------------

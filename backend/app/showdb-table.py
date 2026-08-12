@@ -1,7 +1,24 @@
 # app/show_cards.py
-from sqlalchemy import text
-from app.db import engine
+import sys
+import os
+from pathlib import Path
+from sqlalchemy import text, create_engine
+from dotenv import load_dotenv
 
+current_file = Path(__file__).resolve()
+backend_dir = current_file.parents[1]  # adjusts to parent directory
+root_dir   = backend_dir.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+load_dotenv(root_dir / ".env")
+user     = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD") 
+db_name  = os.getenv("DB_NAME")
+port     = os.getenv("DB_PORT", "5432")
+raw_url = os.getenv("DATABASE_URL", f"postgresql://{user}:{password}@localhost:{port}/{db_name}")
+local_url = raw_url.replace("@postgres_db:", "@localhost:")
+engine = create_engine(local_url)
 def display_cards_table():
     query = text("""
         SELECT 

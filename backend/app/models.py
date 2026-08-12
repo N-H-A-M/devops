@@ -21,7 +21,7 @@ class CreditCard(BaseModel):
     # International & Abroad Overhead
     foreign_transaction_fee_percent: float = Field(..., description="Percentage fee added by the issuer when spending money abroad", ge=0, le=100)
     apr: float = Field(..., ge=0, description="Annual Percentage Rate.")
-    credit_score_required: str = Field(..., description="Typical credit tier required")
+    credit_score_required: Optional[str] = Field(None, description="Typical credit tier required")
     signup_bonus: Optional[str] = Field(None, description="Current introductory offer. Can be blank.")
 
     # --- Israeli Club Rules Alignment ---

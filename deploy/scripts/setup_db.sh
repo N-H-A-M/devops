@@ -17,7 +17,7 @@ DB_PASS=$(python3 -c "from urllib.parse import urlparse; p = urlparse('''$DATABA
 DB_NAME=$(python3 -c "from urllib.parse import urlparse; p = urlparse('''$DATABASE_URL'''); print(p.path.lstrip('/'))")
 
 # Fallback path to your SQL schema file
-SQL_FILE_PATH="/home/devwork/devops project/devops/src/postgres_sql/cards-db.sql"
+SQL_FILE_PATH="/home/devwork/devops project/devops/backend/migrations/versions/schema.sql"
 
 echo "⚙️  Starting robust database environment setup..."
 echo "DEBUG parsed values: User='$DB_USER', DB='$DB_NAME'"
@@ -41,22 +41,21 @@ else
 fi
 
 # 5. Check if tables inside the schema file already exist before executing
-SEED_FILE_PATH="/home/devwork/devops project/devops/src/postgres_sql/seed.sql"
+SEED_FILE_PATH="/home/devwork/devops project/devops/backend/migrations/versions/seed.sql"
 
 if [ -f "$SQL_FILE_PATH" ]; then
     echo "📝 Schema file found. Checking for existing tables..."
     
-    TABLES_COUNT=$(sudo -u postgres psql -d "$DB_NAME" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")
+    TABLE_EXISTS=$(sudo psql -h 127.0.0.1  -U "$DB_USER" -d "$DB_NAME" -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='credit_cards';")
     
-    if [ "$TABLES_COUNT" = "0" ]; then
-        echo "🚀 Database is empty. Executing schema file: $SQL_FILE_PATH"
-        sudo -u postgres psql -d "$DB_NAME" < "$SQL_FILE_PATH"
-        echo "✅ Database tables successfully created!"
+    if [ "$TABLE_EXISTS" != "1" ]; then
+        echo "🚀 Table credit_cards missing. Executing schema file..."
+        sudo psql -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" < "$SQL_FILE_PATH"
         
         # --- NEW SEEDING BLOCK ---
         if [ -f "$SEED_FILE_PATH" ]; then
             echo "🌱 Seed file found. Injecting initial data: $SEED_FILE_PATH"
-            sudo -u postgres psql -d "$DB_NAME" < "$SEED_FILE_PATH"
+            sudo psql -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" < "$SEED_FILE_PATH"
             echo "✅ Data successfully seeded!"
         else
             echo "ℹ️  No seed file found at $SEED_FILE_PATH. Skipping data injection."
