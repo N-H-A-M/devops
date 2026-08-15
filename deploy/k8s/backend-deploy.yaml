@@ -24,7 +24,7 @@ spec:
         - name: ghcr-secrets
       containers:
         - name: credit-card
-          image: ghcr.io/N-H-A-M/devops:backend
+          image: ghcr.io/n-h-a-m/devops:backend
           ports:
             - containerPort: 8000
   

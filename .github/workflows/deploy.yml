@@ -30,7 +30,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       
-   ##   - name: Create GHCR Secret in Kubernetes
+      - name: Create GHCR Secret in Kubernetes
         run: |
           kubectl create secret docker-registry ghcr-secrets \
             --docker-server=ghcr.io \

@@ -9,3 +9,5 @@ spec:
     - ReadWriteOnce
   volumeMode: Block
   persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/postgres-pv"
