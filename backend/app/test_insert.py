@@ -1,16 +1,24 @@
 # app/test_insert.py
 import asyncio
 import os
+import sys
 import asyncpg
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+current_file = Path(__file__).resolve()
+backend_dir = current_file.parents[1]  # adjusts to parent directory
+root_dir   = backend_dir.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+load_dotenv(root_dir / ".env")
 
 async def insert_test_card():
     db_url = os.environ.get("DATABASE_URL")
     if not db_url:
         raise RuntimeError("DATABASE_URL is not set.")
-
+    if not os.path.exists("/.dockerenv") and "postgres_db" in db_url:
+        db_url = os.environ.get("DATABASE_URL_EX")
     conn = await asyncpg.connect(db_url)
     try:
         query = """

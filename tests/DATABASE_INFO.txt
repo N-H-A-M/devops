@@ -1,0 +1,2 @@
+some scripts/python function will not work because the url changes when inside or outside the container
+outside will use localhost and the external port while in the container it needs the internal port and @

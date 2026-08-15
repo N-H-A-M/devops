@@ -21,6 +21,9 @@ def _get_database_url() -> str:
         raise RuntimeError(
             "DATABASE_URL is not set. Copy .env.example to .env and fill it in."
         )
+    if not os.path.exists("/.dockerenv") and "postgres_db" in url:
+        url = os.environ.get("DATABASE_URL_EX")
+
     return url
 
 

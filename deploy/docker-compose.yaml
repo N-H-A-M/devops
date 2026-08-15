@@ -37,7 +37,7 @@ services:
   frontend:
     build: ${PROJECT_ROOT}/frontend
     ports:
-      - "3000:3000"
+      - "3000:8080"
     environment:
       - VITE_API_URL=http://localhost:8000
     depends_on:
