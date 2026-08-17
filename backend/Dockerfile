@@ -10,9 +10,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # Install system build tools needed for compiling dependencies (e.g., C extensions for psycopg2)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends  bsdutils\
     build-essential \
     libpq-dev \
+    && apt-get clean\
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and build wheels into a standalone directory
@@ -31,8 +32,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 # Install ONLY runtime shared libraries (libpq for Postgres)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends bsdutils\
     libpq5 \
+    && apt-get clean\
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from builder stage
