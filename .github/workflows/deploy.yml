@@ -29,15 +29,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      
-      - name: Create GHCR Secret in Kubernetes
-        run: |
-          minikube kubectl -- create secret docker-registry ghcr-secrets \
-            --docker-server=ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }} \
-            --namespace=application \
-            --dry-run=client -o yaml | kubectl apply -f -
 
       
       # 3. Extract Commit SHA
