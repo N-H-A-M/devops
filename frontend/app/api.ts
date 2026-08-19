@@ -3,7 +3,7 @@ import { CreditCard } from '../types/card_specs';
 // Set NEXT_PUBLIC_API_URL in .env.local (see .env.local.example).
 // The localhost fallback is only for convenience in local dev --
 // never hardcode a real deployment URL here.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export class ApiError extends Error {
   status?: number;

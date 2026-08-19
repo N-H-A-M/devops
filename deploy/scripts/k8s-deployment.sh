@@ -1,33 +1,46 @@
-#!/bin/bash
-
-# Exit immediately if a command fails
+#!/usr/bin/env bash
 set -e
 
-# Path to your Kubernetes manifests folder
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 K8S_DIR="$PROJECT_ROOT/deploy/k8s"
-echo "🚀 Restarting Minikube cluster..."
+ENV_FILE="$K8S_DIR/base/.env.secret"
+
+echo "Restarting Minikube cluster..."
 minikube delete
 minikube start
 
-echo "🔍 Validating Kubernetes files in $K8S_DIR..."
-minikube kubectl -- apply -f "$K8S_DIR" --dry-run=client
+echo "Applying namespaces and image pull secret..."
+minikube kubectl -- apply -f "$K8S_DIR/base"
 
-# Step 1: Deploy namespaces first
-if [ -f "$K8S_DIR/namespaces.yaml" ] || [ -f "$K8S_DIR/namespace.yaml" ]; then
-    echo "📁 Applying namespaces..."
-    minikube kubectl -- apply -f "$K8S_DIR/namespaces.yaml" 2>/dev/null || kubectl apply -f "$K8S_DIR/namespace.yaml"
-else
-    echo "⚠️  No dedicated namespace.yaml file found. Applying all files directly."
-fi
+minikube kubectl -- create secret docker-registry ghcr-secrets \
+  --docker-server=ghcr.io \
+  --docker-username=$(grep GHCR_USERNAME "$ENV_FILE" | cut -d '=' -f2) \
+  --docker-password=$(grep GHCR_PAT "$ENV_FILE"  | cut -d '=' -f2) \
+  --namespace=application \
+  --dry-run=client -o yaml | minikube kubectl -- apply -f -
 
-# Step 2: Deploy all remaining Kubernetes files
-echo "📦 Deploying all remaining Kubernetes resources..."
-minikube kubectl -- apply -f "$K8S_DIR" --recursive
+minikube kubectl -- create secret generic backend-db-secret \
+  --from-literal=DATABASE_URL=$(grep DATABASE_URL "$ENV_FILE" | cut -d '=' -f2-) \
+  --namespace=application \
+  --dry-run=client -o yaml | minikube kubectl -- apply -f -
 
-echo "⏳ Waiting for pods to initialize..."
+
+minikube kubectl -- create secret generic postgres-secret \
+  --from-literal=POSTGRES_DB=$(grep DB_NAME "$PROJECT_ROOT/.env" | cut -d '=' -f2) \
+  --from-literal=POSTGRES_USER=$(grep DB_USER "$PROJECT_ROOT/.env" | cut -d '=' -f2) \
+  --from-literal=POSTGRES_PASSWORD=$(grep DB_PASSWORD "$PROJECT_ROOT/.env" | cut -d '=' -f2) \
+  --namespace=database \
+  --dry-run=client -o yaml | minikube kubectl -- apply -f -
+
+echo "Deploying database layer..."
+minikube kubectl -- apply -f "$K8S_DIR/database"
+
+echo "Deploying application layer..."
+minikube kubectl -- apply -f "$K8S_DIR/application"
+
+echo "Waiting for pods to initialize..."
 sleep 5
 
-echo "📊 Current Cluster Status:"
+echo "Current Cluster Status:"
 minikube kubectl -- get pods --all-namespaces
