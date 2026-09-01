@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+  namespace: application
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+       maxSurge: 1
+       maxUnavailable: 1 
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secrets
+      containers:
+        - name: credit-card
+          image: ghcr.io/n-h-a-m/devops/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-db-secret
+                  key: DATABASE_URL

@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+  namespace: database
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          command: ['sh', '-c']
+          args:
+            - |
+               until pg_isready -h postgres-service -p 5432 -U "${POSTGRES_USER}"; do
+                echo "postgres-service $(POSTGRES_USER)"
+                echo "Waiting for PostgreSQL engine..."
+                sleep 2
+               done
+               echo "PostgreSQL is ready!"
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+      containers:
+        - name: db-init
+          image: postgres:15-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              psql -v ON_ERROR_STOP=1 -h postgres-service.database.svc.cluster.local -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/schema.sql
+              psql -v ON_ERROR_STOP=1 -h postgres-service.database.svc.cluster.local -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/seed.sql
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+          volumeMounts:
+            - name: sql-scripts
+              mountPath: /scripts
+      volumes:
+        - name: sql-scripts
+          configMap:
+            name: db-sql-scripts

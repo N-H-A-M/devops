@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: "" # Must match PV's empty storageClassName
+  volumeName: postgres-pv # Explicitly forces binding to your PV

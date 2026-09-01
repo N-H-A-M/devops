@@ -5,3 +5,7 @@ __pycache__/
 venv/
 .env*
 .env.secret
+*.dec
+*.dec.yaml
+secrets.yaml
+secrets.*.dec.yaml
