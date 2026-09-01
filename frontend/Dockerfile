@@ -9,6 +9,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV CI=true
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN apk update && apk upgrade --no-cache
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependencies and source code
@@ -23,6 +24,8 @@ RUN pnpm run build
 # STAGE 2: Secure Nginx Alpine Runtime
 # ==========================================
 FROM nginx:alpine AS runner
+
+RUN apk update && apk upgrade --no-cache
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

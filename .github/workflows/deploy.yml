@@ -52,7 +52,7 @@ jobs:
 
       - name: Build Backend Image
         run: |
-          docker build -t card-backend:local ./backend
+          docker build  --no-cache --pull -t card-backend:local ./backend
 
       - name: Scan Backend Image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build Frontend Image
         run: |
-          docker build -t card-frontend:local ./frontend
+          docker build --no-cache --pull -t card-frontend:local ./frontend
 
       - name: Scan Frontend Image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
