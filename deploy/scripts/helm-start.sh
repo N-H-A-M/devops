@@ -35,4 +35,4 @@ echo "=== Deployment Complete ==="
 # 2. Check release status and running pods
 helm list -n "$NAMESPACE"
 minikube kubectl --  get pods -n "$NAMESPACE"
-minikube kubectl -- port-forward svc/frontend-service 8080:3000 -n application
+minikube kubectl -- port-forward -n application svc/credit-compare-frontend-service 8080:3000 

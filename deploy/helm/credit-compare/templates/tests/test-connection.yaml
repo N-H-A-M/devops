@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "credit-compare.fullname" . }}-test-connection"
+  name: "{{ .Release.Name }}-test-connection"
   labels:
-    {{- include "credit-compare.labels" . | nindent 4 }}
+    app.kubernetes.io/name: frontend-test
+    app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     "helm.sh/hook": test
 spec:
@@ -11,5 +12,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "credit-compare.fullname" . }}:{{ .Values.service.port }}']
+      args: ['{{ .Release.Name }}-frontend-service:{{ .Values.frontend.service.port | default 80 }}']
   restartPolicy: Never

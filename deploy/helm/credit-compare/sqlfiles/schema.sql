@@ -2,7 +2,7 @@
 -- Credit Card Analytics: schema.sql
 -- ============================================================
 
-CREATE TABLE credit_cards (
+CREATE TABLE IF NOT EXISTS credit_cards (
     id VARCHAR(50) PRIMARY KEY,                   
     name VARCHAR(100) NOT NULL,
     issuer VARCHAR(100) NOT NULL,

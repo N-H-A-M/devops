@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: backend-configmap
-  namespace: application
+  name: "{{ .Release.Name }}-backend-config"
+  namespace: {{  .Values.backend.namespace | default "application"  }}
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  # property-like keys; each key maps to a simple value
-  DB_PORT: "5432"
-  DB_HOST: "postgres.database.svc.cluster.local"
-  DB_NAME: "cards_db"
+  DB_PORT: {{ .Values.database.port | quote }}
+  DB_HOST: "{{ .Release.Name }}-postgres-service.{{ .Values.database.namespace | default "database" }}.svc.cluster.local"
+  DB_NAME: {{ .Values.database.name | default "cards_db" | quote }}

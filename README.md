@@ -14,4 +14,6 @@ DB_PASSWORD= passwrod
 DB_NAME= name of DB
 PROJECT_ROOT=.
 
+Need key for age/sops
+could be placed anywhere change in file deploy/scripts/helm-start.sh
 needs to have a .env.secret in deploy/k8s/base

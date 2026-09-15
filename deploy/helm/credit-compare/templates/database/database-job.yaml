@@ -1,61 +1,70 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: db-init-job
-  namespace: database
+  name: {{ .Release.Name }}-db-init-{{ .Release.Revision }}
+  namespace: {{ .Values.database.namespace }}
   annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded,before-hook-creation
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
+  labels:
+    app.kubernetes.io/name: db-init
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  ttlSecondsAfterFinished: 300
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db-init
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       restartPolicy: OnFailure
       initContainers:
         - name: wait-for-postgres
-          image: postgres:15-alpine
+          image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
           command: ['sh', '-c']
           args:
             - |
-               until pg_isready -h postgres-service -p 5432 -U "${POSTGRES_USER}"; do
-                echo "postgres-service $(POSTGRES_USER)"
-                echo "Waiting for PostgreSQL engine..."
+              until pg_isready -h {{ .Release.Name }}-postgres-service -p {{ .Values.database.port }} -U "${POSTGRES_USER}"; do
+                echo "Waiting for PostgreSQL engine at {{ .Release.Name }}-postgres-service..."
                 sleep 2
-               done
-               echo "PostgreSQL is ready!"
+              done
+              echo "PostgreSQL is ready!"
           env:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgres-secret
+                  name: {{ .Values.database.secretName }}
                   key: POSTGRES_USER
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: postgres-secret
+                  name: {{ .Values.database.secretName }}
                   key: POSTGRES_DB
       containers:
         - name: db-init
-          image: postgres:15-alpine
+          image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
-              psql -v ON_ERROR_STOP=1 -h postgres-service.database.svc.cluster.local -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/schema.sql
-              psql -v ON_ERROR_STOP=1 -h postgres-service.database.svc.cluster.local -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/seed.sql
+              psql -v ON_ERROR_STOP=1 -h {{ .Release.Name }}-postgres-service -p {{ .Values.database.port }} -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/schema.sql
+              psql -v ON_ERROR_STOP=1 -h {{ .Release.Name }}-postgres-service -p {{ .Values.database.port }} -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /scripts/seed.sql
           env:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgres-secret
+                  name: {{ .Values.database.secretName }}
                   key: POSTGRES_USER
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgres-secret
+                  name: {{ .Values.database.secretName }}
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: postgres-secret
+                  name: {{ .Values.database.secretName }}
                   key: POSTGRES_DB
           volumeMounts:
             - name: sql-scripts
@@ -63,4 +72,4 @@ spec:
       volumes:
         - name: sql-scripts
           configMap:
-            name: db-sql-scripts
+            name: {{ .Release.Name }}-db-sql-scripts

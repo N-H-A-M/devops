@@ -1,25 +1,39 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
-  namespace: application
+  name: {{ .Release.Name }}-frontend-deploy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.frontend.replicaCount | default 1 }}
   selector:
     matchLabels:
-      app: frontend
+      app.kubernetes.io/name: frontend
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: frontend
+        app.kubernetes.io/name: frontend
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       imagePullSecrets:
-        - name: ghcr-secrets
+        - name: {{.Values.frontend.imagePullSecret}}
       containers:
         - name: frontend
-          image: ghcr.io/n-h-a-m/devops/frontend:latest
+          image: "{{.Values.frontend.image.repository}}:{{.Values.frontend.image.tag}}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
-            - containerPort: 8080
+            - containerPort: {{ .Values.frontend.port}}
           env:
-            - name: NEXT_PUBLIC_API_URL
-              value: "/api"
+            - name: {{ .Values.frontend.env.name}}
+              value: {{ .Values.frontend.env.value | quote}}
+          volumeMounts:
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config-volume
+          configMap:
+            name: "{{ .Release.Name }}-frontend-nginx-config"

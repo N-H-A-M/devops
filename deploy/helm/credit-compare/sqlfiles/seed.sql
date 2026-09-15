@@ -121,4 +121,4 @@ INSERT INTO credit_cards (
         'Points clear and become deployable 2 business days after the initial transaction',
         'Benefits extend to cardholder, domestic partner, and dependent children up to age 21'
     ]
-);
+)ON CONFLICT (id) DO NOTHING;
