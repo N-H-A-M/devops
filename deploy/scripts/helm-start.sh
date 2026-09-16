@@ -22,6 +22,10 @@ fi
 
 echo "=== Deploying $RELEASE_NAME via Helm + SOPS ==="
 
+minikube kubectl -- create namespace argocd --dry-run=client -o yaml | minikube kubectl -- apply -f -
+minikube kubectl -- apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+minikube kubectl -- wait --for=condition=established --timeout=60s crd/applications.argoproj.io
+
 helm secrets  upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
   --namespace "$NAMESPACE" \
   --create-namespace \
@@ -35,4 +39,5 @@ echo "=== Deployment Complete ==="
 # 2. Check release status and running pods
 helm list -n "$NAMESPACE"
 minikube kubectl --  get pods -n "$NAMESPACE"
-minikube kubectl -- port-forward -n application svc/credit-compare-frontend-service 8080:3000 
+minikube kubectl -- port-forward -n application svc/credit-compare-frontend-service 8080:3000 &
+minikube kubectl -- port-forward svc/argocd-server -n argocd 9090:443 &

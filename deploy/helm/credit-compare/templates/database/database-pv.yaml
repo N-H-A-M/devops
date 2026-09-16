@@ -10,5 +10,8 @@ spec:
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   storageClassName: manual
+  claimRef:
+    name: "{{ .Release.Name }}-postgres-pvc"
+    namespace: {{ .Values.database.namespace | default "database" }}
   hostPath:
     path: {{  index .Values.database "pv-path" | quote  }}

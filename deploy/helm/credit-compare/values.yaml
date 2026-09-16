@@ -33,12 +33,12 @@ database:
   port: 5432
   host: credit-compare-postgres-service.database.svc.cluster.local
   name: cards_db
+  storage: "4Gi"
   secretName: postgres-secret
   image:
     repository: postgres
     tag: 15-alpine
     pullPolicy: IfNotPresent
-  storage: 4Gi
   pv-path: "/data/postgres-pv"
   service:
     type: ClusterIP
@@ -60,3 +60,12 @@ frontend:
     targetPort: 8080
     nodePort: 30080
     protocol: TCP
+
+argocd:
+  namespace: argocd
+  destinationNamespace: application
+  source:
+    repositoryURL: "https://github.com/N-H-A-M/devops.git"
+    targetRevision: dev
+    path: "helm/credit-compare"
+    valueFiles: values.yaml
