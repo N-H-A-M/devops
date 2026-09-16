@@ -1,0 +1,101 @@
+name: Build, Tag, and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+
+      
+      # 3. Extract Commit SHA
+      - name: Set Short Commit SHA
+        id: vars
+        run: echo "SHA_TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      # ==========================================
+      # LOWERCASE LETTERS
+      # ==========================================
+      - name: Set Environment Variables
+        run: |
+          # Convert 'N-H-A-M/devops' to lowercase 'n-h-a-m/devops'
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_BASE=ghcr.io/${REPO_LOWER}" >> $GITHUB_ENV
+          echo "SHA_TAG=sha-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          
+      # ==========================================
+      # BACKEND PIPELINE BUILD -> SCAN -> TAG & PUSH
+      # ==========================================
+
+      - name: Build Backend Image
+        run: |
+          docker build  --no-cache --pull -t card-backend:local ./backend
+
+      - name: Scan Backend Image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'card-backend:local'
+          format: 'table'
+          exit-code: '1' # Fails the CI job if HIGH or CRITICAL issues are found
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+
+      - name: Tag Backend Image
+        run: |
+          docker tag card-backend:local $IMAGE_BASE/backend:${{ env.SHA_TAG }}
+          docker tag card-backend:local $IMAGE_BASE/backend:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push $IMAGE_BASE/backend:${{ env.SHA_TAG }}
+          docker push $IMAGE_BASE/backend:latest
+
+      # ==========================================
+      # FRONTEND PIPELINE BUILD -> SCAN -> TAG & PUSH
+      # ==========================================
+
+      - name: Build Frontend Image
+        run: |
+          docker build --no-cache --pull -t card-frontend:local ./frontend
+
+      - name: Scan Frontend Image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'card-frontend:local'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+          
+      - name: Tag Frontend Image
+        run: |
+          docker tag card-frontend:local $IMAGE_BASE/frontend:${{ env.SHA_TAG }}
+          docker tag card-frontend:local $IMAGE_BASE/frontend:latest
+
+      - name: Push Frontend Image
+        run: |
+          docker push $IMAGE_BASE/frontend:${{ env.SHA_TAG }}
+          docker push $IMAGE_BASE/frontend:latest 

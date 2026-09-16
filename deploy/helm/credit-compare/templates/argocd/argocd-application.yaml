@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: "{{  .Release.Name  }}-argocd"
+  namespace: {{  .Values.argocd.namespace  }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL:  {{  .Values.argocd.source.repositoryURL  }}
+    targetRevision: {{  .Values.argocd.source.targetRevision  }}
+    path: {{  .Values.argocd.source.path  }}                           # Path to your Helm chart
+    helm:
+      valueFiles:
+        - {{.Values.argocd.source.valueFiles  }}
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: {{  .Values.argocd.destinationNamespace | default "application"  }}                                  # Target namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

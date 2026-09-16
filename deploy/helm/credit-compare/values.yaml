@@ -1,0 +1,71 @@
+backend:
+  namespace: application
+  replicaCount: 3
+  image:
+    repository: ghcr.io/n-h-a-m/devops/backend
+    tag: latest
+    pullPolicy: Always
+  imagePullSecret: ghcr-secrets
+  secretName: backend-db-secret
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  config:
+    name: backend-configmap
+  service:
+    type: ClusterIP
+    protocol: TCP
+    port: 8080
+    targetPort: 8000
+
+database:
+  namespace: database
+  port: 5432
+  host: credit-compare-postgres-service.database.svc.cluster.local
+  name: cards_db
+  storage: "4Gi"
+  secretName: postgres-secret
+  image:
+    repository: postgres
+    tag: 15-alpine
+    pullPolicy: IfNotPresent
+  pv-path: "/data/postgres-pv"
+  service:
+    type: ClusterIP
+
+frontend:
+  imagePullSecret: ghcr-secrets
+  port: 8080
+  replicaCount: 1
+  image:
+    repository: ghcr.io/n-h-a-m/devops/frontend
+    tag: latest
+    pullPolicy: Always
+  env:
+    name: NEXT_PUBLIC_API_URL
+    value: "/api"
+  port: 3000
+  service:
+    type: NodePort
+    targetPort: 8080
+    nodePort: 30080
+    protocol: TCP
+
+argocd:
+  namespace: argocd
+  destinationNamespace: application
+  source:
+    repositoryURL: "https://github.com/N-H-A-M/devops.git"
+    targetRevision: dev
+    path: "helm/credit-compare"
+    valueFiles: values.yaml

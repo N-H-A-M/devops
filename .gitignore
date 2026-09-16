@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env*
+.env.secret
+*.dec
+*.dec.yaml
+secrets.yaml
+secrets.*.dec.yaml

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-db-sql-scripts
+  namespace: {{ .Values.database.namespace | default "database"}}
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  schema.sql: |
+{{ .Files.Get "sqlfiles/schema.sql" | indent 4 }}
+  seed.sql: |
+{{ .Files.Get "sqlfiles/seed.sql" | indent 4 }}
